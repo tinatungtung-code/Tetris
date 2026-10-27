@@ -1,0 +1,6 @@
+{
+  "name": "經典俄羅斯方塊 - Tetris Classic",
+  "description": "以純 HTML5、CSS3 與原生 JavaScript 打造的經典俄羅斯方塊，具備現代 SRS 旋轉踢牆、7-Bag 隨機發塊、暫存(Hold)、下一塊預覽、等級倍率、流暢連擊音效與行動觸控支援。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

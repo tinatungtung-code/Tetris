@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>經典俄羅斯方塊 - Tetris Classic</title>
+    <meta name="description" content="以純 HTML5、CSS3 與原生 JavaScript 打造的經典俄羅斯方塊，具備現代 SRS 旋轉踢牆、7-Bag 隨機發塊、暫存(Hold)、下一塊預覽、等級倍率、流暢連擊音效與行動觸控支援。" />
+    <meta property="og:title" content="經典俄羅斯方塊 - Tetris Classic" />
+    <meta property="og:description" content="使用原生 HTML、CSS、JavaScript 打造的經典俄羅斯方塊遊戲，具備流暢動畫、計分升級、下一塊預覽、暫存(Hold)、音效及觸控控制。" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Fonts -->
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body data-state="title">
+    <!-- Ambient Background Lighting -->
+    <div class="ambient-glow ambient-top-left" aria-hidden="true"></div>
+    <div class="ambient-glow ambient-bottom-right" aria-hidden="true"></div>
+
+    <!-- Main Container -->
+    <div id="game-app" class="game-wrapper">
+      
+      <!-- Top Utility Header -->
+      <header class="top-nav">
+        <div class="nav-brand">
+          <div class="logo-mark">
+            <span class="logo-square cyan"></span>
+            <span class="logo-square yellow"></span>
+            <span class="logo-square purple"></span>
+            <span class="logo-square red"></span>
+          </div>
+          <span class="logo-text">TETRIS <span class="logo-sub">俄羅斯方塊</span></span>
+        </div>
+        <div class="nav-controls">
+          <button id="btn-sound" class="btn-icon" aria-label="切換音效 (M)" title="切換音效 [M]">
+            <svg id="icon-sound-on" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
+            </svg>
+            <svg id="icon-sound-off" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path>
+            </svg>
+          </button>
+          <button id="btn-pause-header" class="btn-icon" aria-label="暫停 (P / Esc)" title="暫停遊戲 [P / Esc]">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </button>
+          <button id="btn-restart-header" class="btn-icon" aria-label="重新開始 (R)" title="重新開始 [R]">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Gameplay Arena Layout -->
+      <main class="game-arena">
+        
+        <!-- Left Panel: Hold & Stats -->
+        <aside class="panel side-panel left-panel">
+          <div class="hud-card">
+            <h2 class="card-title">HOLD 暫存</h2>
+            <div class="mini-canvas-box">
+              <canvas id="hold-canvas" width="100" height="90"></canvas>
+            </div>
+            <span class="card-hint">Shift / C</span>
+          </div>
+
+          <div class="hud-card stat-card">
+            <span class="stat-label">LEVEL 等級</span>
+            <div id="hud-level" class="stat-value">1</div>
+          </div>
+
+          <div class="hud-card stat-card">
+            <span class="stat-label">LINES 行數</span>
+            <div id="hud-lines" class="stat-value">0</div>
+          </div>
+        </aside>
+
+        <!-- Center: Tetris Game Board -->
+        <div class="board-container">
+          <div class="board-frame">
+            <canvas id="board-canvas" width="300" height="600"></canvas>
+            <div id="combo-badge" class="combo-badge hidden">
+              <span id="combo-text">COMBO x2</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Panel: Next Queue & Score -->
+        <aside class="panel side-panel right-panel">
+          <div class="hud-card">
+            <h2 class="card-title">NEXT 下一個</h2>
+            <div class="next-previews">
+              <div class="mini-canvas-box main-next">
+                <canvas id="next-canvas-1" width="100" height="90"></canvas>
+              </div>
+              <div class="sub-next-row">
+                <div class="mini-canvas-box sub-next">
+                  <canvas id="next-canvas-2" width="60" height="54"></canvas>
+                </div>
+                <div class="mini-canvas-box sub-next">
+                  <canvas id="next-canvas-3" width="60" height="54"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hud-card stat-card">
+            <span class="stat-label">SCORE 分數</span>
+            <div id="hud-score" class="stat-value">0</div>
+          </div>
+
+          <div class="hud-card stat-card">
+            <span class="stat-label">BEST 最高分</span>
+            <div id="hud-highscore" class="stat-value text-accent">0</div>
+          </div>
+        </aside>
+
+      </main>
+
+      <!-- Bottom Touch Controls for Mobile/Tablets -->
+      <footer class="touch-controls" id="touch-controls" aria-label="手機虛擬操作面板">
+        <div class="touch-row main-actions">
+          <button id="touch-hold" class="touch-btn touch-btn-sub" aria-label="暫存方塊">HOLD</button>
+          <button id="touch-rotate-ccw" class="touch-btn touch-btn-action" aria-label="逆時針旋轉">↺ 轉</button>
+          <button id="touch-rotate-cw" class="touch-btn touch-btn-action primary" aria-label="順時針旋轉">↻ 轉</button>
+          <button id="touch-hard-drop" class="touch-btn touch-btn-hard" aria-label="瞬間直落">DROP</button>
+        </div>
+        <div class="touch-row dpad-row">
+          <button id="touch-left" class="touch-btn touch-btn-nav" aria-label="向左移動">◀</button>
+          <button id="touch-down" class="touch-btn touch-btn-nav" aria-label="加速落下">▼</button>
+          <button id="touch-right" class="touch-btn touch-btn-nav" aria-label="向右移動">▶</button>
+        </div>
+      </footer>
+
+      <!-- Keyboard Hints Footer for Desktop -->
+      <div class="desktop-hint-bar">
+        <span>⬅️ ➡️ 移動</span> ·
+        <span>⬆️ 旋轉</span> ·
+        <span>⬇️ 軟降</span> ·
+        <span>空白鍵 硬降</span> ·
+        <span>C / Shift 暫存</span> ·
+        <span>P 暫停</span>
+      </div>
+
+    </div>
+
+    <!-- OVERLAYS & MODALS -->
+
+    <!-- Title / Start Screen -->
+    <div id="modal-title" class="screen-overlay">
+      <div class="modal-card title-card">
+        <div class="title-emblem">
+          <div class="tetromino-icon-grid">
+            <div class="mini-tile cyan"></div>
+            <div class="mini-tile cyan"></div>
+            <div class="mini-tile cyan"></div>
+            <div class="mini-tile cyan"></div>
+            <div class="mini-tile purple"></div>
+            <div class="mini-tile purple"></div>
+            <div class="mini-tile purple"></div>
+            <div class="mini-tile yellow"></div>
+            <div class="mini-tile yellow"></div>
+          </div>
+          <h1 class="main-title">俄羅斯方塊</h1>
+          <p class="title-subtitle">TETRIS CLASSIC ARCADE</p>
+        </div>
+
+        <div class="title-stats-preview">
+          <div class="title-stat-item">
+            <span class="stat-small-label">歷史最高紀錄</span>
+            <span id="title-best-score" class="stat-small-value">0</span>
+          </div>
+        </div>
+
+        <button id="btn-start-game" data-start="true" class="btn-start-primary">
+          <span class="btn-text">開始遊戲</span>
+          <span class="btn-key-hint">ENTER 或 空白鍵</span>
+        </button>
+
+        <div class="control-guide-box">
+          <h3 class="guide-title">操作指南</h3>
+          <div class="guide-grid">
+            <div class="guide-item"><kbd>⬅️</kbd><kbd>➡️</kbd> 或 <kbd>A</kbd><kbd>D</kbd> <span>左右移動</span></div>
+            <div class="guide-item"><kbd>⬆️</kbd> 或 <kbd>W</kbd><kbd>X</kbd> <span>順時針旋轉</span></div>
+            <div class="guide-item"><kbd>Z</kbd> <span>逆時針旋轉</span></div>
+            <div class="guide-item"><kbd>⬇️</kbd> 或 <kbd>S</kbd> <span>軟降加速</span></div>
+            <div class="guide-item"><kbd>Space 空白</kbd> <span>硬降瞬間直落</span></div>
+            <div class="guide-item"><kbd>Shift</kbd> 或 <kbd>C</kbd> <span>暫存方塊</span></div>
+            <div class="guide-item"><kbd>P</kbd> 或 <kbd>Esc</kbd> <span>暫停遊戲</span></div>
+            <div class="guide-item"><kbd>M</kbd> <span>開關音效</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pause Screen Modal -->
+    <div id="modal-pause" class="screen-overlay hidden">
+      <div class="modal-card">
+        <h2 class="modal-header-title">遊戲暫停</h2>
+        <p class="modal-desc">深呼吸，調整節奏再出發！</p>
+        
+        <div class="modal-metrics">
+          <div class="modal-metric-tile">
+            <span class="metric-kicker">目前得分</span>
+            <span id="pause-score" class="metric-num">0</span>
+          </div>
+          <div class="modal-metric-tile">
+            <span class="metric-kicker">消行數</span>
+            <span id="pause-lines" class="metric-num">0</span>
+          </div>
+          <div class="modal-metric-tile">
+            <span class="metric-kicker">等級</span>
+            <span id="pause-level" class="metric-num">1</span>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button id="btn-resume" class="btn-primary-action">繼續遊戲 (P / Esc)</button>
+          <button id="btn-pause-restart" class="btn-secondary-action">重新開始 (R)</button>
+          <button id="btn-pause-menu" class="btn-tertiary-action">主選單</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="modal-gameover" class="screen-overlay hidden">
+      <div class="modal-card gameover-card">
+        <div class="gameover-header">
+          <span class="gameover-tag">GAME OVER</span>
+          <h2 class="modal-header-title">遊戲結束</h2>
+        </div>
+
+        <div id="new-high-badge" class="new-high-banner hidden">🏆 榮登新高紀錄！</div>
+
+        <div class="modal-metrics">
+          <div class="modal-metric-tile highlight">
+            <span class="metric-kicker">最終分數</span>
+            <span id="gameover-score" class="metric-num text-accent">0</span>
+          </div>
+          <div class="modal-metric-tile">
+            <span class="metric-kicker">消除行數</span>
+            <span id="gameover-lines" class="metric-num">0</span>
+          </div>
+          <div class="modal-metric-tile">
+            <span class="metric-kicker">達到等級</span>
+            <span id="gameover-level" class="metric-num">1</span>
+          </div>
+          <div class="modal-metric-tile">
+            <span class="metric-kicker">歷史最佳</span>
+            <span id="gameover-best" class="metric-num">0</span>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button id="btn-gameover-restart" data-start="true" class="btn-primary-action">
+            再玩一次 (Enter / Space)
+          </button>
+          <button id="btn-gameover-menu" class="btn-secondary-action">回主選單</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- JavaScript Application Entry -->
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
